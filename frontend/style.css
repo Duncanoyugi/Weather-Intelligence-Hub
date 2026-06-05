@@ -1,0 +1,585 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+header p {
+    opacity: 0.9;
+    font-size: 0.95rem;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+.tab-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+}
+
+.tab-btn.active {
+    background: white;
+    color: #667eea;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.loading {
+    text-align: center;
+    color: white;
+    padding: 40px;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.error {
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.rate-limit-warning {
+    background: #fef3c7;
+    color: #d97706;
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.weather-card {
+    background: white;
+    border-radius: 24px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.location-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.location-section h2 {
+    font-size: 1.8rem;
+    color: #1a1a2e;
+}
+
+.badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: white;
+}
+
+.temperature-section {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    margin-bottom: 25px;
+}
+
+.temperature {
+    font-size: 64px;
+    font-weight: bold;
+    color: #e94560;
+}
+
+.unit {
+    font-size: 24px;
+    color: #666;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 16px;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.detail-icon {
+    font-size: 28px;
+}
+
+.detail-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-label {
+    font-size: 12px;
+    color: #666;
+}
+
+.detail-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a2e;
+}
+
+.risk-section {
+    background: #fff5f0;
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+}
+
+.risk-section h3 {
+    margin-bottom: 12px;
+    color: #1a1a2e;
+}
+
+.risk-score {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.risk-level {
+    font-size: 20px;
+    font-weight: bold;
+    padding: 6px 14px;
+    border-radius: 20px;
+    color: white;
+}
+
+.risk-score-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #1a1a2e;
+}
+
+.risk-factors {
+    list-style: none;
+    padding-left: 0;
+}
+
+.risk-factors li {
+    padding: 6px 0;
+    color: #555;
+    font-size: 14px;
+    border-bottom: 1px solid #eee;
+}
+
+.risk-factors li:last-child {
+    border-bottom: none;
+}
+
+.recommendations-section {
+    background: #e8f4f8;
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+}
+
+.recommendations-section h3 {
+    margin-bottom: 12px;
+    color: #1a1a2e;
+}
+
+.recommendations-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.recommendations-list li {
+    padding: 8px 0;
+    color: #333;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.priority-badge {
+    margin-top: 12px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.priority-badge.urgent {
+    background: #dc2626;
+    color: white;
+}
+
+.priority-badge.important {
+    background: #f59e0b;
+    color: white;
+}
+
+.priority-badge.informational {
+    background: #10b981;
+    color: white;
+}
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #999;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+/* Forecast Styles */
+.forecast-container {
+    background: white;
+    border-radius: 24px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.forecast-container h3 {
+    margin-bottom: 20px;
+    color: #1a1a2e;
+}
+
+.forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.forecast-card {
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+}
+
+.forecast-card .date {
+    font-size: 18px;
+    font-weight: bold;
+    color: #1a1a2e;
+    margin-bottom: 10px;
+}
+
+.forecast-card .temp {
+    font-size: 28px;
+    font-weight: bold;
+    color: #e94560;
+    margin: 10px 0;
+}
+
+.forecast-card .temp-range {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.forecast-card .rain {
+    color: #3b82f6;
+    margin: 5px 0;
+}
+
+.forecast-card .risk {
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.forecast-timestamp {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 12px;
+    color: #999;
+}
+
+/* Trends Styles */
+.trends-container {
+    background: white;
+    border-radius: 24px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.trends-container h3 {
+    margin-bottom: 20px;
+    color: #1a1a2e;
+}
+
+.trends-controls {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.trends-controls select {
+    padding: 8px 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+}
+
+.trends-summary {
+    background: #e8f4f8;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.averages-card, .extremes-card, .risk-distribution {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+}
+
+.averages-card h4, .extremes-card h4, .risk-distribution h4 {
+    margin-bottom: 15px;
+    color: #1a1a2e;
+}
+
+.averages-grid, .extremes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+}
+
+.average-item, .extreme-item {
+    text-align: center;
+    padding: 10px;
+    background: white;
+    border-radius: 12px;
+}
+
+.average-item .label, .extreme-item .label {
+    font-size: 12px;
+    color: #666;
+}
+
+.average-item .value, .extreme-item .value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #e94560;
+}
+
+.risk-distribution .risk-bars {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.risk-bar {
+    flex: 1;
+    text-align: center;
+}
+
+.risk-bar .bar {
+    height: 40px;
+    background: #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.risk-bar .fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.risk-bar .fill.high { background: #dc2626; }
+.risk-bar .fill.medium { background: #f59e0b; }
+.risk-bar .fill.low { background: #10b981; }
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.data-table th, .data-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.data-table th {
+    background: #f0f0f0;
+    font-weight: 600;
+}
+
+/* Usage Card */
+.usage-card {
+    background: white;
+    border-radius: 24px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.usage-card h3 {
+    margin-bottom: 15px;
+    color: #1a1a2e;
+}
+
+.usage-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.usage-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.progress-bar {
+    background: #e0e0e0;
+    border-radius: 10px;
+    height: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    background: #e94560;
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.usage-note {
+    margin-top: 15px;
+    font-size: 12px;
+    color: #999;
+    text-align: center;
+}
+
+.refresh-btn {
+    width: 100%;
+    background: white;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #667eea;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-top: 10px;
+}
+
+.refresh-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+@media (max-width: 600px) {
+    .temperature {
+        font-size: 48px;
+    }
+    
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .location-section h2 {
+        font-size: 1.4rem;
+    }
+    
+    .forecast-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tabs {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        width: 100%;
+    }
+}

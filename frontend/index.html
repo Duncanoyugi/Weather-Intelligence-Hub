@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Intelligence Hub</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌤️ Weather Intelligence Hub</h1>
+            <p>Real-time weather with AI-powered risk assessment</p>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('current')">📍 Current Weather</button>
+            <button class="tab-btn" onclick="showTab('forecast')">📅 3-Day Forecast</button>
+            <button class="tab-btn" onclick="showTab('trends')">📈 Historical Trends</button>
+            <button class="tab-btn" onclick="showTab('usage')">📊 API Usage</button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading weather data...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div class="error" id="error" style="display: none;"></div>
+
+        <!-- Rate Limit Warning -->
+        <div class="rate-limit-warning" id="rateLimitWarning" style="display: none;">
+            ⚠️ You've reached the rate limit. Please wait a moment before refreshing.
+        </div>
+
+        <!-- Tab 1: Current Weather -->
+        <div id="currentTab" class="tab-content active">
+            <div class="weather-card" id="weatherCard" style="display: none;">
+                <div class="location-section">
+                    <h2 id="location">--</h2>
+                    <span class="badge" id="riskBadge">--</span>
+                </div>
+
+                <div class="temperature-section">
+                    <div class="temperature" id="temperature">--</div>
+                    <div class="unit">°C</div>
+                </div>
+
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-icon">💧</span>
+                        <div class="detail-info">
+                            <span class="detail-label">Humidity</span>
+                            <span class="detail-value" id="humidity">--</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌧️</span>
+                        <div class="detail-info">
+                            <span class="detail-label">Rain Probability</span>
+                            <span class="detail-value" id="rainProb">--</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">💨</span>
+                        <div class="detail-info">
+                            <span class="detail-label">Wind Speed</span>
+                            <span class="detail-value" id="windSpeed">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="risk-section">
+                    <h3>⚠️ Risk Assessment</h3>
+                    <div class="risk-score">
+                        <span class="risk-level" id="riskLevel">--</span>
+                        <span class="risk-score-value" id="riskScore">--</span>
+                    </div>
+                    <ul class="risk-factors" id="riskFactors"></ul>
+                </div>
+
+                <div class="recommendations-section">
+                    <h3>💡 Recommendations</h3>
+                    <ul class="recommendations-list" id="recommendations"></ul>
+                    <div class="priority-badge" id="priorityBadge"></div>
+                </div>
+
+                <div class="footer">
+                    <div class="source" id="source">--</div>
+                    <div class="timestamp" id="timestamp">--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: 3-Day Forecast -->
+        <div id="forecastTab" class="tab-content">
+            <div class="forecast-container" id="forecastContainer" style="display: none;">
+                <h3>📅 3-Day Weather Forecast</h3>
+                <div class="forecast-grid" id="forecastGrid"></div>
+                <div class="footer">
+                    <div class="forecast-timestamp" id="forecastTimestamp">--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Historical Trends -->
+        <div id="trendsTab" class="tab-content">
+            <div class="trends-container" id="trendsContainer" style="display: none;">
+                <h3>📈 Historical Weather Trends</h3>
+                
+                <div class="trends-controls">
+                    <label>Days: </label>
+                    <select id="trendsDays" onchange="fetchTrends()">
+                        <option value="7">Last 7 days</option>
+                        <option value="14">Last 14 days</option>
+                        <option value="30">Last 30 days</option>
+                    </select>
+                </div>
+
+                <div class="trends-summary" id="trendsSummary"></div>
+                
+                <div class="averages-card">
+                    <h4>📊 Averages</h4>
+                    <div class="averages-grid" id="averagesGrid"></div>
+                </div>
+
+                <div class="extremes-card">
+                    <h4>🌡️ Extremes</h4>
+                    <div class="extremes-grid" id="extremesGrid"></div>
+                </div>
+
+                <div class="risk-distribution">
+                    <h4>📊 Risk Distribution</h4>
+                    <div id="riskDistribution"></div>
+                </div>
+
+                <div class="daily-data">
+                    <h4>📋 Daily Records</h4>
+                    <div class="table-wrapper">
+                        <table class="data-table" id="dailyDataTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Temp (°C)</th>
+                                    <th>Humidity</th>
+                                    <th>Rain %</th>
+                                    <th>Risk</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dailyDataBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: API Usage -->
+        <div id="usageTab" class="tab-content">
+            <div class="usage-card" id="usageCard" style="display: none;">
+                <h3>📊 API Usage Statistics</h3>
+                <div class="usage-stats">
+                    <div class="usage-item">
+                        <span>Quota Remaining</span>
+                        <strong id="quotaRemaining">--</strong>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <div class="usage-item">
+                        <span>Quota Used</span>
+                        <strong id="quotaUsed">--</strong>
+                    </div>
+                    <div class="usage-item">
+                        <span>Total Quota</span>
+                        <strong id="quotaTotal">--</strong>
+                    </div>
+                    <div class="usage-item">
+                        <span>Remaining %</span>
+                        <strong id="quotaPercent">--</strong>
+                    </div>
+                </div>
+                <div class="footer">
+                    <div class="usage-note">Resets monthly • Free plan: 1,000 requests</div>
+                </div>
+            </div>
+        </div>
+
+        <button class="refresh-btn" onclick="refreshAllData()">
+            🔄 Refresh All Data
+        </button>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

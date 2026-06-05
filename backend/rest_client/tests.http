@@ -1,0 +1,29 @@
+### Health Check
+GET http://localhost:8000/api/health
+
+### Current Weather
+GET http://localhost:8000/api/weather/current
+
+### Weather History
+GET http://localhost:8000/api/weather/history?limit=5
+
+### System Usage
+GET http://localhost:8000/api/system/usage
+
+### Swagger Schema
+GET http://localhost:8000/api/schema/
+
+### Swagger UI (Open in browser)
+# http://localhost:8000/api/docs/
+
+### 3-Day Forecast
+GET http://localhost:8000/api/weather/forecast
+
+### Weather Trends (Last 7 days)
+GET http://localhost:8000/api/weather/trends?days=7
+
+### Weather Trends (Last 14 days)
+GET http://localhost:8000/api/weather/trends?days=14
+
+### Rate Limit Test (run multiple times quickly)
+GET http://localhost:8000/api/weather/current
