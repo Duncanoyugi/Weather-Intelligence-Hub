@@ -1,9 +1,8 @@
-# TODO
+## Render deployment debugging checklist
 
-- [x] Diagnose 503 cause for `/api/weather/current` (mock-mode failure).
-- [x] Fix frontend stale rendering for trends when backend returns empty.
-- [x] Make forecast backend parsing more defensive and return `source`.
-- [x] Modernize Forecast UI safely (header, condition icon rendering, updated timestamp).
-- [ ] Continue modern forecast enhancements (if needed): summary line, better icons, and consistent styling with current weather.
-- [ ] Production hardening: update deployment configs (Render + Vercel) and ensure env vars are wired.
+- [x] Identify `requirements.txt` location issue (Render working directory)
+- [x] Verify `backend/requirements.txt` contains PostgreSQL driver (`psycopg2-binary`)
+- [ ] Force Render Python to 3.12 (add `backend/runtime.txt` or `.python-version`)
+- [ ] Redeploy and confirm build log installs `psycopg2-binary`
+- [ ] If still failing, check if Render is ignoring/using a different requirements file
 
