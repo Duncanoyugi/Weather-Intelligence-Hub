@@ -11,20 +11,42 @@ timeout: 30000,
 
 export { fetchCurrentWeather, fetchForecast, fetchTrends, fetchUsage, fetchHealth };
 
-async function fetchCurrentWeather(): Promise<WeatherData> {
-  const response = await apiClient.get<WeatherData>('/weather/current');
+type Coords = { lat: number; lon: number };
+
+async function fetchCurrentWeather(coords?: Partial<Coords>): Promise<WeatherData> {
+  const { lat, lon } = coords || {};
+  const response = await apiClient.get<WeatherData>(
+    lat != null && lon != null
+      ? `/weather/current?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`
+      : '/weather/current'
+  );
   return response.data;
 }
 
-async function fetchForecast(): Promise<ForecastData> {
-  const response = await apiClient.get<ForecastData>('/weather/forecast');
+async function fetchForecast(coords?: Partial<Coords>): Promise<ForecastData> {
+  const { lat, lon } = coords || {};
+  const response = await apiClient.get<ForecastData>(
+    lat != null && lon != null
+      ? `/weather/forecast?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`
+      : '/weather/forecast'
+  );
   return response.data;
 }
 
-async function fetchTrends(days: 7 | 14 | 30 = 7): Promise<TrendsData> {
-  const response = await apiClient.get<TrendsData>(`/weather/trends?days=${days}`);
+async function fetchTrends(days: 7 | 14 | 30 = 7, coords?: Partial<Coords>): Promise<TrendsData> {
+  const { lat, lon } = coords || {};
+
+  // Backend currently only uses days + historical records; location is optional for filtering.
+  // We only send lat/lon if your backend supports it in the future.
+  // For now, keep behavior unchanged when coords are not provided.
+  const response = await apiClient.get<TrendsData>(
+    coords && lat != null && lon != null
+      ? `/weather/trends?days=${days}&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`
+      : `/weather/trends?days=${days}`
+  );
   return response.data;
 }
+
 
 async function fetchUsage(): Promise<UsageData> {
   const response = await apiClient.get<UsageData>('/system/usage');

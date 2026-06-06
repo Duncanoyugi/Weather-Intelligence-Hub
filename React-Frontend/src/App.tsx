@@ -7,14 +7,33 @@ import Usage from './components/Usage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { fetchCurrentWeather, fetchForecast, fetchTrends, fetchUsage, fetchHealth } from './services/api';
 import type { WeatherData, ForecastData, TrendsData, UsageData, HealthData } from './types/weather';
+import { useGeolocation } from './hooks/useGeolocation';
+
 
 type TabType = 'current' | 'forecast' | 'trends' | 'usage';
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('current');
+
+  const { lat, lon, error: geoError, loading: geoLoading, permissionAsked, askForLocation } =
+    useGeolocation();
+
+  const [manualCoords, setManualCoords] = useState<{ lat: string; lon: string }>(() => ({
+    lat: '',
+    lon: '',
+  }));
+  const [useManualCoords, setUseManualCoords] = useState(false);
+
+  const resolvedLat = useManualCoords ? parseFloat(manualCoords.lat) : lat;
+  const resolvedLon = useManualCoords ? parseFloat(manualCoords.lon) : lon;
+
+  const hasResolvedCoords =
+    Number.isFinite(resolvedLat) && Number.isFinite(resolvedLon) && resolvedLat != null && resolvedLon != null;
+
   const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
+
 
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [forecastLoading, setForecastLoading] = useState(false);
@@ -48,9 +67,11 @@ function App() {
     try {
       setWeatherLoading(true);
       setWeatherError(null);
-      const data = await fetchCurrentWeather();
+      const data = await fetchCurrentWeather(
+        hasResolvedCoords ? { lat: resolvedLat as number, lon: resolvedLon as number } : undefined
+      );
       setWeather(data);
-      setLoadedTabs(prev => new Set(prev).add('current'));
+      setLoadedTabs((prev) => new Set(prev).add('current'));
       setLastUpdated(new Date());
     } catch (err) {
       if (err instanceof Error) {
@@ -65,15 +86,18 @@ function App() {
     } finally {
       setWeatherLoading(false);
     }
-  }, []);
+  }, [hasResolvedCoords, resolvedLat, resolvedLon]);
+
 
   const loadForecast = useCallback(async () => {
     try {
       setForecastLoading(true);
       setForecastError(null);
-      const data = await fetchForecast();
+      const data = await fetchForecast(
+        hasResolvedCoords ? { lat: resolvedLat as number, lon: resolvedLon as number } : undefined
+      );
       setForecast(data);
-      setLoadedTabs(prev => new Set(prev).add('forecast'));
+      setLoadedTabs((prev) => new Set(prev).add('forecast'));
     } catch (err) {
       if (err instanceof Error) {
         if (err.message === 'RATE_LIMIT') {
@@ -87,29 +111,34 @@ function App() {
     } finally {
       setForecastLoading(false);
     }
-  }, []);
+  }, [hasResolvedCoords, resolvedLat, resolvedLon]);
 
-  const loadTrends = useCallback(async (days: 7 | 14 | 30 = 7) => {
-    try {
-      setTrendsLoading(true);
-      setTrendsError(null);
-      const data = await fetchTrends(days);
-      setTrends(data);
-      setLoadedTabs(prev => new Set(prev).add('trends'));
-    } catch (err) {
-      if (err instanceof Error) {
-        if (err.message === 'RATE_LIMIT') {
-          setRateLimitMessage('Rate limit hit — retry in 60s');
-        } else if (err.message === 'SERVICE_UNAVAILABLE') {
-          setTrendsError('Weather service temporarily unavailable');
-        } else {
-          setTrendsError(err.message);
+
+  const loadTrends = useCallback(
+    async (days: 7 | 14 | 30 = 7) => {
+      try {
+        setTrendsLoading(true);
+        setTrendsError(null);
+        const data = await fetchTrends(days, hasResolvedCoords ? { lat: resolvedLat as number, lon: resolvedLon as number } : undefined);
+        setTrends(data);
+        setLoadedTabs((prev) => new Set(prev).add('trends'));
+      } catch (err) {
+        if (err instanceof Error) {
+          if (err.message === 'RATE_LIMIT') {
+            setRateLimitMessage('Rate limit hit — retry in 60s');
+          } else if (err.message === 'SERVICE_UNAVAILABLE') {
+            setTrendsError('Weather service temporarily unavailable');
+          } else {
+            setTrendsError(err.message);
+          }
         }
+      } finally {
+        setTrendsLoading(false);
       }
-    } finally {
-      setTrendsLoading(false);
-    }
-  }, []);
+    },
+    [hasResolvedCoords, resolvedLat, resolvedLon]
+  );
+
 
   const loadUsage = useCallback(async () => {
     try {
@@ -146,24 +175,38 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // Don't fetch weather until we have coords OR user explicitly decided to use manual coords.
+    if (geoLoading) return;
+
+    if (useManualCoords && !hasResolvedCoords) return;
+
     loadCurrentWeather();
     const interval = setInterval(loadCurrentWeather, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [loadCurrentWeather]);
+  }, [geoLoading, useManualCoords, hasResolvedCoords, loadCurrentWeather]);
+
 
   useEffect(() => {
     loadHealth();
   }, [loadHealth]);
 
   useEffect(() => {
+    if (activeTab === 'usage' && !loadedTabs.has('usage')) {
+      loadUsage();
+      return;
+    }
+
+    // For forecast/trends, wait until geolocation attempt resolved or manual coords chosen.
+    if (geoLoading) return;
+    if (!hasResolvedCoords && !useManualCoords) return;
+
     if (activeTab === 'forecast' && !loadedTabs.has('forecast')) {
       loadForecast();
     } else if (activeTab === 'trends' && !loadedTabs.has('trends')) {
       loadTrends();
-    } else if (activeTab === 'usage' && !loadedTabs.has('usage')) {
-      loadUsage();
     }
-  }, [activeTab, loadedTabs, loadForecast, loadTrends, loadUsage]);
+  }, [activeTab, loadedTabs, geoLoading, hasResolvedCoords, useManualCoords, loadForecast, loadTrends, loadUsage]);
+
 
   const handleRefresh = useCallback(async () => {
     setRateLimitMessage(null);
@@ -173,12 +216,85 @@ function App() {
     else if (activeTab === 'usage') await loadUsage();
   }, [activeTab, loadCurrentWeather, loadForecast, loadTrends, loadUsage]);
 
+
   const tabIndicatorStyle = useMemo(() => {
     const tabIndex = { current: 0, forecast: 1, trends: 2, usage: 3 }[activeTab];
     const baseLeft = 8;
     const tabWidth = 120;
     return { left: `${baseLeft + tabIndex * tabWidth}px`, width: `${tabWidth - 16}px` };
   }, [activeTab]);
+
+  if (geoLoading && !weather) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-4">
+          <div className="skeleton-loader h-12 w-3/4 mx-auto rounded-lg" />
+          <div className="text-sm text-gray-400 text-center">📍 Detecting your location...</div>
+          <div className="grid grid-cols-3 gap-3 mt-8">
+            <div className="skeleton-loader h-32 rounded-xl" />
+            <div className="skeleton-loader h-32 rounded-xl" />
+            <div className="skeleton-loader h-32 rounded-xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const showGeoDeniedUI = permissionAsked && geoError && !useManualCoords;
+  if (showGeoDeniedUI) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-md glass-card p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <MapPin className="w-5 h-5 text-cyan" />
+            <h2 className="text-lg font-semibold text-white">Location needed</h2>
+          </div>
+          <p className="text-sm text-gray-300 mb-4">{geoError}</p>
+
+          <button
+            onClick={askForLocation}
+            className="w-full p-2 mb-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-white text-sm"
+          >
+            Try Again
+          </button>
+
+          <div className="border-t border-white/10 my-4" />
+
+          <div className="text-sm text-gray-400 mb-2">Or enter coordinates manually</div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setUseManualCoords(true);
+              // if invalid, backend will still fall back; user can correct
+            }}
+            className="space-y-3"
+          >
+            <input
+              type="number"
+              step="any"
+              placeholder="Latitude"
+              value={manualCoords.lat}
+              onChange={(e) => setManualCoords((p) => ({ ...p, lat: e.target.value }))}
+              className="w-full p-2 border rounded bg-white/5 text-white"
+              required
+            />
+            <input
+              type="number"
+              step="any"
+              placeholder="Longitude"
+              value={manualCoords.lon}
+              onChange={(e) => setManualCoords((p) => ({ ...p, lon: e.target.value }))}
+              className="w-full p-2 border rounded bg-white/5 text-white"
+              required
+            />
+            <button type="submit" className="w-full p-2 bg-cyan text-navy font-semibold rounded">
+              Use My Coordinates
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (weatherLoading && !weather) {
     return (
@@ -195,6 +311,7 @@ function App() {
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen p-4 sm:p-6">
