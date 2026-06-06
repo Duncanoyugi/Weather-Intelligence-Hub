@@ -58,7 +58,7 @@ class CurrentWeatherView(APIView):
         # Build response
         response_data = self._build_response(cached_data, source)
         
-        # Store in database for history
+        # Store in database for history (avoid polluting history with mock fallback)
         self._store_historical_record(response_data)
         
         return Response(response_data, status=status.HTTP_200_OK)
@@ -101,6 +101,12 @@ class CurrentWeatherView(APIView):
     def _store_historical_record(self, response_data: dict):
         """Store weather snapshot in database."""
         try:
+            # Skip saving mock fallback into history (it creates flat-line charts)
+            source = response_data.get('source')
+            if source != 'api':
+                logger.warning(f"Skipping WeatherRecord save because source={source}")
+                return
+
             WeatherRecord.objects.create(
                 location=response_data.get('location', 'Unknown'),
                 temperature=response_data.get('temperature', 0),
@@ -140,77 +146,91 @@ class ForecastHistoryView(APIView):
 
 class WeatherTrendView(APIView):
     """Get historical weather trends for the last N days."""
-    
+
     from django.db.models import Avg, Max, Min, Count
     from datetime import timedelta
     from django.utils import timezone
-    
+
     @rate_limit(key_prefix='trends', limit=20, window=60)
     def get(self, request):
         from django.db.models import Avg, Max, Min, Count
         from datetime import timedelta
         from django.utils import timezone
-        
+
         days = int(request.query_params.get('days', 7))
-        
+
         # Limit to max 30 days
         if days > 30:
             days = 30
-        
+
         cutoff_date = timezone.now() - timedelta(days=days)
-        
-        # Get historical records
-        records = WeatherRecord.objects.filter(
-            created_at__gte=cutoff_date
-        ).order_by('created_at')
-        
-        if not records.exists():
+
+        # Base queryset (do NOT iterate over it; only use aggregates/light operations)
+        records_qs = WeatherRecord.objects.filter(created_at__gte=cutoff_date)
+
+        # Minimal query to detect empty dataset
+        records_found = records_qs.count()
+        if records_found == 0:
             return Response({
                 'days_requested': days,
                 'message': 'No historical data available yet. Weather records are saved when you fetch weather.',
                 'records_found': 0,
                 'trends': None
             })
-        
-        # Calculate trends
-        avg_temp = records.aggregate(Avg('temperature'))['temperature__avg']
-        max_temp = records.aggregate(Max('temperature'))['temperature__max']
-        min_temp = records.aggregate(Min('temperature'))['temperature__min']
-        avg_humidity = records.aggregate(Avg('humidity'))['humidity__avg']
-        avg_rain = records.aggregate(Avg('rain_probability'))['rain_probability__avg']
-        
+
+        # Calculate trends (aggregates happen in DB)
+        agg = records_qs.aggregate(
+            avg_temp=Avg('temperature'),
+            max_temp=Max('temperature'),
+            min_temp=Min('temperature'),
+            avg_humidity=Avg('humidity'),
+            avg_rain=Avg('rain_probability'),
+        )
+
+        avg_temp = agg.get('avg_temp')
+        max_temp = agg.get('max_temp')
+        min_temp = agg.get('min_temp')
+        avg_humidity = agg.get('avg_humidity')
+        avg_rain = agg.get('avg_rain')
+
         # Group by risk level
-        risk_counts = records.values('risk_score').annotate(count=Count('id'))
-        
-        # Prepare daily data for chart
-        daily_data = []
-        for record in records:
-            daily_data.append({
+        risk_counts = records_qs.values('risk_score').annotate(count=Count('id'))
+
+        # Prepare chart data: only fetch the last 10 records from DB
+        # Keep chronological order for the UI.
+        last_records = list(records_qs.order_by('-created_at')[:10])
+        last_records.reverse()
+
+
+        daily_data = [
+            {
                 'date': record.created_at.strftime('%Y-%m-%d %H:%M'),
                 'temperature': record.temperature,
                 'humidity': record.humidity,
                 'rain_probability': record.rain_probability,
-                'risk_score': record.risk_score
-            })
-        
+                'risk_score': record.risk_score,
+            }
+            for record in last_records
+        ]
+
         response_data = {
             'days_requested': days,
-            'records_found': records.count(),
+            'records_found': records_found,
             'date_range': {
                 'from': cutoff_date.isoformat(),
-                'to': timezone.now().isoformat()
+                'to': timezone.now().isoformat(),
             },
             'averages': {
-                'temperature': round(avg_temp, 1) if avg_temp else None,
-                'humidity': round(avg_humidity, 1) if avg_humidity else None,
-                'rain_probability': round(avg_rain, 1) if avg_rain else None
+                'temperature': round(avg_temp, 1) if avg_temp is not None else None,
+                'humidity': round(avg_humidity, 1) if avg_humidity is not None else None,
+                'rain_probability': round(avg_rain, 1) if avg_rain is not None else None,
             },
             'extremes': {
                 'max_temperature': max_temp,
-                'min_temperature': min_temp
+                'min_temperature': min_temp,
             },
             'risk_distribution': list(risk_counts),
-            'daily_data': daily_data[-10:]  # Last 10 records for chart
+            'daily_data': daily_data,  # already last 10
         }
-        
+
         return Response(response_data)

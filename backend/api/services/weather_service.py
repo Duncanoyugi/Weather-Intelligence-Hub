@@ -46,49 +46,43 @@ class WeatherAIClient:
         }
     
     def get_weather_by_ip(self, days: int = 3) -> Tuple[Optional[Dict[str, Any]], str]:
-        """
-        Get weather using IP geolocation.
-        
+        """Get weather using IP geolocation.
+
         Returns:
             Tuple of (weather_data, source)
         """
-        use_mock = os.getenv('USE_MOCK_WEATHER', 'false').lower() == 'true'
-        
-        if use_mock:
-            return self._get_mock_data(), "mock"
-        
         try:
             response = requests.get(
                 f"{self.base_url}/v1/weather-geo",
                 params={
                     "days": days,
-                    "units": "metric"
+                    "units": "metric",
                 },
                 headers=self.headers,
-                timeout=10
+                timeout=10,
             )
-            
+
             if response.status_code == 429:
-                logger.warning("Rate limit exceeded - falling back to mock data")
-                return self._get_mock_data(), "mock"
-            
+                logger.warning("Rate limit exceeded")
+                return None, "rate_limited"
+
             if response.status_code == 401:
-                logger.error("Invalid API key - falling back to mock data")
-                return self._get_mock_data(), "mock"
-            
+                logger.error("Invalid API key")
+                return None, "unauthorized"
+
             if response.status_code >= 500:
-                logger.error(f"WeatherAI API server error: {response.status_code} - falling back to mock data")
-                return self._get_mock_data(), "mock"
-            
+                logger.error(f"WeatherAI API server error: {response.status_code}")
+                return None, "server_error"
+
             response.raise_for_status()
             return response.json(), "api"
-            
+
         except requests.exceptions.Timeout:
-            logger.error("WeatherAI API timeout - falling back to mock data")
-            return self._get_mock_data(), "mock"
+            logger.error("WeatherAI API timeout")
+            return None, "timeout"
         except requests.exceptions.RequestException as e:
-            logger.error(f"WeatherAI API error: {e} - falling back to mock data")
-            return self._get_mock_data(), "mock"
+            logger.error(f"WeatherAI API error: {e}")
+            return None, "request_exception"
     
     def get_usage_stats(self) -> Optional[Dict[str, Any]]:
         """Get API usage statistics from WeatherAI."""
@@ -151,7 +145,7 @@ class WeatherAIClient:
         # Get coordinates for reference
         lat = location_data.get('lat', 0)
         lon = location_data.get('lon', 0)
-        
+
         return {
             'location': location_name,
             'latitude': lat,
@@ -166,3 +160,5 @@ class WeatherAIClient:
             'country': country,
             'raw_forecast': api_response.get('daily', api_response.get('hourly', []))
         }
+
+

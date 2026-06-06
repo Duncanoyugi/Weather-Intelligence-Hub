@@ -62,6 +62,17 @@ export default function Trends({ data, loading = false, error = null, onDaysChan
 
   if (!data) return null;
 
+  // Ensure the chart/table don't show stale points when the backend returns null trends.
+  if (!data.daily_data || data.records_found === 0) {
+    return (
+      <div className="glass-card p-6 text-center">
+        <h3 className="text-xl font-bold text-white font-sora mb-2">📈 Historical Trends</h3>
+        <p className="text-gray-300">No historical data available yet.</p>
+      </div>
+    );
+  }
+
+
   return (
     <div className="glass-card p-6">
       <h3 className="text-xl font-bold text-white font-sora mb-5">📈 Historical Trends</h3>

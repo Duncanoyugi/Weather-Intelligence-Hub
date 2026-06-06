@@ -37,8 +37,8 @@ class ForecastView(APIView):
                 )
             
             # Extract daily forecast
-            daily_forecast = weather_data.get('daily', [])
-            location_data = weather_data.get('location', {})
+            daily_forecast = weather_data.get('daily', []) or []
+            location_data = weather_data.get('location', {}) or {}
             timezone = location_data.get('timezone', '')
             
             # Get city from timezone
@@ -52,18 +52,20 @@ class ForecastView(APIView):
             rec_service = RecommendationService()
             
             for day in daily_forecast[:3]:  # Only first 3 days
-                # Extract day data
+                # Extract day data (be defensive about provider field names)
                 day_data = {
-                    'date': day.get('date', ''),
+                    'date': day.get('date', day.get('day', '')),
                     'temperature_high': day.get('temperature_max', day.get('temp_max', 0)),
                     'temperature_low': day.get('temperature_min', day.get('temp_min', 0)),
-                    'rain_probability': day.get('rain_probability', day.get('precipitation_probability', 0)),
-                    'wind_speed': day.get('wind_speed_max', day.get('wind_speed', 0)),
+                    'rain_probability': day.get(
+                        'rain_probability',
+                        day.get('precipitation_probability', day.get('precip_prob', 0))
+                    ),
+                    'wind_speed': day.get('wind_speed_max', day.get('wind_speed', day.get('wind_kph', 0))),
                     'condition': day.get('condition', day.get('summary', '')),
                     'icon': day.get('icon', '')
                 }
                 
-                # Calculate risk for this day
                 risk = risk_service.calculate_risk(day_data)
                 recommendations = rec_service.generate_recommendations(day_data, risk)
                 
@@ -84,7 +86,7 @@ class ForecastView(APIView):
             # Cache for 30 minutes
             cache.set(cache_key, response_data, 1800)
             
-            return Response(response_data)
+            return Response({**response_data, 'source': source or 'api'})
             
         except Exception as e:
             logger.error(f"Forecast API error: {e}")
