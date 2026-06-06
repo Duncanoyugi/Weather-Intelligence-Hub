@@ -1,9 +1,10 @@
 import axios from 'axios';
 import type { WeatherData, ForecastData, TrendsData, UsageData, HealthData } from '../types/weather';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const apiClient = axios.create({
+
   baseURL: BASE_URL,
   timeout: 10000,
 });

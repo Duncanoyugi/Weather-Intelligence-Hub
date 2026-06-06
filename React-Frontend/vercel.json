@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://weather-intelligence-hub.onrender.com/api/$1"
+    }
+  ]
+}
+
