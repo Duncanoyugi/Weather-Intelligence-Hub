@@ -22,3 +22,7 @@ rpds-py==2026.5.1
 sqlparse==0.5.5
 tzdata==2026.2
 uritemplate==4.2.0
+gunicorn==22.0.0
+whitenoise==6.8.2
+psycopg2-binary==2.9.9
+dj-database-url==2.3.0

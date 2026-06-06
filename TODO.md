@@ -1,8 +1,9 @@
 # TODO
 
-- [x] Fix `/api/weather/current` 503 cause by removing/ignoring mock-mode failure (keep real WeatherAI only).
-- [x] Ensure backend cleanly fails with 503 when WeatherAI is unreachable, but without any mock-related branches.
-
-- [ ] Address separate DB issue causing `/api/weather/trends` 500 (SSL connection closed unexpectedly) by stabilizing PostgreSQL SSL / connection parameters.
-- [ ] Verify endpoints: `/api/weather/current`, `/api/weather/forecast`, `/api/weather/trends` all behave correctly.
+- [x] Diagnose 503 cause for `/api/weather/current` (mock-mode failure).
+- [x] Fix frontend stale rendering for trends when backend returns empty.
+- [x] Make forecast backend parsing more defensive and return `source`.
+- [x] Modernize Forecast UI safely (header, condition icon rendering, updated timestamp).
+- [ ] Continue modern forecast enhancements (if needed): summary line, better icons, and consistent styling with current weather.
+- [ ] Production hardening: update deployment configs (Render + Vercel) and ensure env vars are wired.
 

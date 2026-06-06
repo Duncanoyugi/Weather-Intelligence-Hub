@@ -8,6 +8,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
 
+
 # Load environment variables
 load_dotenv()
 
@@ -15,12 +16,20 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-for-dev')
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise RuntimeError('Missing SECRET_KEY environment variable')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']  # Update with your domain in production
+# Set ALLOWED_HOSTS for production. Keep localhost for local dev/test.
+ALLOWED_HOSTS = [
+    '.onrender.com',
+    'localhost',
+    '127.0.0.1',
+]
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -40,6 +49,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # CORS must be first
     'api.middleware.RequestLoggingMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -49,6 +59,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'weather_hub.urls'
 
@@ -136,6 +147,10 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+# WhiteNoise: compress and cache static assets in production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -156,7 +171,16 @@ SPECTACULAR_SETTINGS = {
 }
 
 # CORS Configuration
-CORS_ALLOW_ALL_ORIGINS = True  # For development only
+# In production, set CORS_ALLOWED_ORIGINS as a comma-separated list, e.g.
+# CORS_ALLOWED_ORIGINS="https://your-vercel-app.vercel.app,https://another-origin"
+CORS_ALLOWED_ORIGINS_RAW = os.getenv('CORS_ALLOWED_ORIGINS', '')
+
+if CORS_ALLOWED_ORIGINS_RAW:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS_RAW.split(',') if origin.strip()]
+else:
+    # Development fallback
+    CORS_ALLOW_ALL_ORIGINS = DEBUG
+
 
 # WeatherAI Configuration
 WEATHERAI_API_KEY = os.getenv('WEATHERAI_API_KEY', '')
