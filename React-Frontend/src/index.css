@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=Sora:wght@100..800&display=swap');
+
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: radial-gradient(ellipse at top right, #0d1528 0%, #0a0f1e 70%);
+    min-height: 100vh;
+    color: #e5e7eb;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.3;
+    background: conic-gradient(from 180deg at 50% 50%, #0a0f1e 0%, #0d1528 25%, #0a0f1e 50%, #0d1528 75%, #0a0f1e 100%);
+    animation: conicRotate 30s linear infinite;
+    z-index: -1;
+  }
+
+  @keyframes conicRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideUp 0.5s ease-out;
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  transition: transform 0.3s ease;
+}
+
+.skeleton-loader {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
