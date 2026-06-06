@@ -1,8 +1,9 @@
-## Render deployment debugging checklist
+## TODO - Weather-intelligence-hub deployment hotfix
 
-- [x] Identify `requirements.txt` location issue (Render working directory)
-- [x] Verify `backend/requirements.txt` contains PostgreSQL driver (`psycopg2-binary`)
-- [ ] Force Render Python to 3.12 (add `backend/runtime.txt` or `.python-version`)
-- [ ] Redeploy and confirm build log installs `psycopg2-binary`
-- [ ] If still failing, check if Render is ignoring/using a different requirements file
+- [x] Increase WeatherAI request timeout (backend)
+- [x] Increase axios timeout (frontend)
+- [x] Use coordinate-based WeatherAI fetch when `lat/lon` are provided
+- [ ] Add browser geolocation in React to send `lat/lon` to backend (for A: accurate user city)
+- [ ] Remove/disable any mock fallback for production responses
+- [ ] Run a quick compile/test step after React change
 

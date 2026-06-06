@@ -37,16 +37,16 @@ class CurrentWeatherView(APIView):
     @method_decorator(cache_control(max_age=300, public=True))
     @rate_limit(key_prefix='weather', limit=30, window=60)
     def get(self, request):
-        # Default coordinates for Nairobi (fallback if weather-geo fails)
+        # Coordinates for Nairobi (fallback)
         lat = request.query_params.get('lat', -1.2921)
         lon = request.query_params.get('lon', 36.8219)
-        
+
         cache_key = CacheService.get_weather_cache_key(float(lat), float(lon))
-        
+
         # Try cache first
         cached_data, source = CacheService.get_or_fetch(
-            cache_key, 
-            lambda: self._fetch_weather_data(lat, lon)
+            cache_key,
+            lambda: self._fetch_weather_data(float(lat), float(lon))
         )
         
         if not cached_data:
@@ -64,18 +64,35 @@ class CurrentWeatherView(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
     
     def _fetch_weather_data(self, lat: float, lon: float):
-        """Fetch raw weather data from WeatherAI."""
-        weather_data, source = self.weather_client.get_weather_by_ip(days=3)
-        
-        if not weather_data:
+        """Fetch raw weather data from WeatherAI.
+
+        If lat/lon are provided, use WeatherAI coordinate endpoint.
+        Otherwise, fall back to IP-based geolocation.
+        """
+        try:
+            # Try coordinates first
+            weather_data, source = self.weather_client.get_weather_by_coordinates(
+                lat=lat,
+                lon=lon,
+                days=3,
+            )
+
+            # If coordinates lookup fails, fall back to IP
+            if not weather_data:
+                weather_data, source = self.weather_client.get_weather_by_ip(days=3)
+
+            if not weather_data:
+                return None
+
+            extracted = self.weather_client.extract_weather_data(weather_data)
+            extracted['source'] = source
+            extracted['latitude'] = lat
+            extracted['longitude'] = lon
+            return extracted
+
+        except Exception as e:
+            logger.error(f"Weather fetch error: {e}")
             return None
-        
-        extracted = self.weather_client.extract_weather_data(weather_data)
-        extracted['source'] = source
-        extracted['latitude'] = lat
-        extracted['longitude'] = lon
-        
-        return extracted
     
     def _build_response(self, weather_data: dict, source: str) -> dict:
         """Build the complete response with intelligence."""
